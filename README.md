@@ -1,272 +1,4 @@
-THIS IS FLOW:
-Coface Incapables - Fact API Flow
-External Vendor
-External Vendor
-Data Ingestor
-Data Ingestor
-Data Distributor
-Data Distributor
-DD Mapping Table
-DD Mapping Table
-OnePAM External LDD
-OnePAM External LDD
-DD Accounting Table
-DD Accounting Table
-Data Ingestion
-Transmit daily XML file
-Transform XML to flat file format
-Only Lawyer administrators
-(Function_Code = 100001)
-are included in output
-Transmit ING-formatted data file
-Business Checks
-Validate record
-alt
-["Incapable is a Minor"]
-Log alert (type='MinorIncapable', status='Skipped')
-Skip record - Minor incapable
-["Incapable is Deceased"]
-Log alert (type='DeceasedIncapable', status='Skipped')
-Skip record - Deceased incapable
-["Valid Record"]
-DD Mapping - Enrich Records with DD-UUID
-Query for existing Incapable mapping [JDBC]
-alt
-["Mapping Found"]
-Return existing DD-UUID (Incapable)
-["Mapping Not Found"]
-Generate new UUID v4 for Incapable
-Return new DD-UUID (Incapable)
-Enrich Incapable record with DD-UUID
-Query for existing Administrator mapping [JDBC]
-alt
-["Mapping Found"]
-Return existing DD-UUID (Administrator)
-["Mapping Not Found"]
-Generate new UUID v4 for Administrator
-Return new DD-UUID (Administrator)
-Enrich Administrator record with DD-UUID
-Entity Matching with OnePAM
-POST /v1/partyandagreementsearch/involved-parties/identify
-Search Incapable (Individual)
-Criteria: DOB, Last Name, First Name, Postal Code
-Return Incapable match result (involvedPartyIdentifier)
-POST /v1/partyandagreementsearch/involved-parties/identify
-Search Administrator (Individual)
-Criteria: DOB, Last Name, First Name, Postal Code
-Return Administrator match result (involvedPartyIdentifier)
-alt
-["Potential Match - Incapable or Administrator"]
-Log alert (type='PotentialMatch', status='Skipped')
-Skip - Potential match requires manual review
-["Exact Match or No Match for both - Continue"]
-Process by Object Code
-alt
-["Object-Code 1001: New inability & responsible"]
-alt
-["Incapable - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Incapable core attributes
-Response
-GET /v5/involved-parties/{uuid}/postal-addresses
-Return postal addresses
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update postal address if changed
-Response
-alt
-["Administrator - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Administrator core attributes
-Response
-GET /v5/involved-parties/{uuid}/postal-addresses
-Return postal addresses
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update postal address if changed
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Check if relationship exists
-(Incapable as grantor, Administrator as grantee)
-Return grantee relationships
-alt
-["Relationship exists"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-party-involved-party-relationships/
-Update Relationship
-Log (status='Success')
-["Relationship does not exist"]
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Log (status='Success')
-["Administrator - No Match"]
-POST /v5/involved-parties (Individual)
-Create Administrator party
-Response with new UUID
-POST /v5/involved-party-involved-party-relationships
-Create Relationship (new Administrator)
-Response
-Log (status='Success')
-["Incapable - No Match"]
-POST /v5/involved-parties (Individual)
-Create Incapable party
-Response with new UUID
-POST /v5/involved-parties/{uuid}/postal-addresses
-Add postal address for Incapable
-Response
-POST /v5/involved-parties/{uuid}/party-markings
-Add legal competency marking (derived from OBJECT-CODE)
-Response
-alt
-["Administrator - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Administrator party
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Check if relationship exists
-Return grantee relationships
-alt
-["Relationship exists"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-party-involved-party-relationships/
-Update Relationship
-Log (status='Success')
-["Relationship does not exist"]
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Log (status='Success')
-["Administrator - No Match"]
-POST /v5/involved-parties (Individual)
-Create Administrator party
-Response with new UUID
-POST /v5/involved-party-involved-party-relationships
-Create Relationship (both parties new)
-Response
-Log (status='Success')
-["Object-Code 1002: Change of responsible"]
-alt
-["Incapable - No Match"]
-Log error (status='Error')
-Error - Incapable must exist for change of responsible
-["Incapable - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Incapable party
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Fetch existing grantee relationships to end previous relationship
-Return grantee relationships
-POST /v5/involved-party-involved-party-relationships/{uuid}/close
-End previous Relationship
-Response
-alt
-["Administrator - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Administrator party
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Check if relationship exists with new Administrator
-Return grantee relationships
-alt
-["Relationship exists"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-party-involved-party-relationships/
-Update Relationship
-Log (status='Success')
-["Relationship does not exist"]
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Log (status='Success')
-["Administrator - No Match"]
-POST /v5/involved-parties (Individual)
-Create Administrator party
-Response with new UUID
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Log (status='Success')
-["Object-Code 1003: Lifting Administration"]
-alt
-["Incapable - No Match"]
-Log error (status='Error')
-Error - Incapable must exist
-["Incapable - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Incapable party
-Response
-alt
-["Administrator - No Match"]
-Log error (status='Error')
-Error - Administrator must exist
-["Administrator - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Administrator party
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Check if relationship exists to end it
-Return grantee relationships
-alt
-["Relationship exists"]
-POST /v5/involved-party-involved-party-relationships/{uuid}/close
-End Relationship
-Log (status='Success')
-["Relationship does not exist"]
-Log error (status='Error')
-Error - Relationship must exist to end it
-["Object-Code 1004: New prescription"]
-alt
-["Incapable - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Incapable party
-Response
-alt
-["Administrator - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Administrator party
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Check if relationship exists
-Return grantee relationships
-alt
-["Relationship exists"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-party-involved-party-relationships/
-Update Relationship
-Log (status='Success')
-["Relationship does not exist"]
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Log (status='Success')
-["Administrator - No Match"]
-POST /v5/involved-parties (Individual)
-Create Administrator party
-Response with new UUID
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Response
-Log (status='Success')
-["Incapable - No Match"]
-POST /v5/involved-parties (Individual)
-Create Incapable party
-Response with new UUID
-alt
-["Administrator - Exact Match"]
-https://touchpoint.ing.net/asm/resources/OpenApiDocument/Involved_Party_API?itProduct=P00007#patch+apis.ing.com+/v5/involved-parties/
-Update Administrator party
-Response
-GET /v5/involved-parties/{uuid}/grantees
-Check if relationship exists
-Return grantee relationships
-alt
-["Relationship exists"]
-Log error (status='Error')
-["Relationship does not exist"]
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Log (status='Success')
-["Administrator - No Match"]
-POST /v5/involved-parties (Individual)
-Create Administrator party
-Response with new UUID
-POST /v5/involved-party-involved-party-relationships
-Create Relationship
-Response
-Log (status='Success')
-
-
-THIS IS CLASS WHERE FLOW IS IMPLEMENTED
+LAST 4 DAYS IM DOING SAME TASK PLZ HELP ME WITH FINAL VERSION 
 package com.ing.datadist.api.service;
 
 import com.ing.datadist.api.model.*;
@@ -638,9 +370,113 @@ public class IncapablesProcessingService {
                 record.getDdUuid());
     }
 
+
+    
+    private void processObjectCode1003(IncapableDbRecord record) {
+
+        log.info("Processing Object Code 1003 for DD_UUID={}", record.getDdUuid());
+
+        // Step 1: INC must exist
+
+        String incOnePamUuid = searchIncapablePerson(record);
+
+        if (incOnePamUuid == null) {
+
+            errorLogDAO.logValidationError(
+
+                    RecordType.INCAPABLE,
+
+                    record.getIncLastName(),
+
+                    "INC party must exist for lifting administration",
+
+                    record.getDdUuid(),
+
+                    null,
+
+                    record.getFileId()
+
+            );
+
+            return;
+
+        }
+
+        // Step 2: ADM must exist
+
+        String admOnePamUuid = searchAdministrator(record);
+
+        if (admOnePamUuid == null) {
+
+            errorLogDAO.logValidationError(
+
+                    RecordType.ADMINISTRATOR,
+
+                    record.getAdmLastName(),
+
+                    "Administrator must exist for lifting administration",
+
+                    record.getDdUuid(),
+
+                    null,
+
+                    record.getFileId()
+
+            );
+
+            return;
+
+        }
+
+        incapablesAccountingDAO.insertSkeletonRecord(record);
+
+        // Step 3: Update INC to CAPABLE
+
+        updateIncapablePersonToCapable(record, incOnePamUuid);
+
+        // Step 4: Update ADMIN
+
+        updateAdministrator(record, admOnePamUuid);
+
+        // Step 5: Close relationship
+
+        String closedRelationshipUuid =
+
+                closeExistingRelationships(record, incOnePamUuid);
+
+        if (closedRelationshipUuid == null) {
+
+            errorLogDAO.logValidationError(
+
+                    RecordType.INCAPABLE_RELATIONSHIP,
+
+                    record.getIncLastName(),
+
+                    "Relationship must exist to end administration",
+
+                    record.getDdUuid(),
+
+                    null,
+
+                    record.getFileId()
+
+            );
+
+            return;
+
+        }
+
+        incapablesAccountingDAO.updateDiFields(record.getDdUuid(), record);
+
+        log.info("Successfully processed Object Code 1003 for DD_UUID={}",
+
+                record.getDdUuid());
+
+    }
+
     /**
      * Object Code 1003: Lifting Administration (Capable)
-     */
+     *//*
     private void processObjectCode1003(IncapableDbRecord record) {
         log.info("Data_Distributor_Incapables: Processing Object Code 1003 (Lifting Administration) for DD_UUID={}",
                 record.getDdUuid());
@@ -720,10 +556,10 @@ public class IncapablesProcessingService {
             SearchIndividualResponseV1 incUpdated =
                     involvedPartySearchService.getIndividualByUuid(incOnePamUuid, record.getFileId());
 
-/*
+*//*
             incapablesAccountingDAO.updateIncapableOnePamSnapshot(
                     record.getDdUuid(), incUpdated, record.getFileId());
-*/
+*//*
         }
         catch (Exception ex){
             log.error("INC snapshot update failed for 1003", ex);
@@ -748,7 +584,7 @@ public class IncapablesProcessingService {
 
         log.info("Data_Distributor_Incapables: Successfully processed Object Code 1003 for DD_UUID={}",
                 record.getDdUuid());
-    }
+    }*/
 
     /**
      * Object Code 1004: New Prescription
@@ -1794,23 +1630,41 @@ public class IncapablesProcessingService {
     }*/
     private String searchAdministrator(IncapableDbRecord record) {
         try {
-            // 1) by internal id
+            // search using ADMIN internal id
             SearchInvolvedPartiesResponseV1 byId =
-                    involvedPartySearchService.searchIndividualByInternalId(record.getDdUuid(), record.getFileId());
+                    involvedPartySearchService.searchIndividualByInternalId(
+                            record.getAdminDdUuid(),
+                            record.getFileId()
+                    );
             if (byId != null && byId.getIndividuals() != null && !byId.getIndividuals().isEmpty()) {
-                return byId.getIndividuals().get(0).getInvolvedPartyIdentifier();
+                if (byId.getIndividuals().size() == 1) {
+                    String uuid = byId.getIndividuals().get(0).getInvolvedPartyIdentifier();
+                    log.info("ADMIN matched by adminDdUuid, UUID={}", uuid);
+                    return uuid;
+                } else {
+                    errorLogDAO.logValidationError(
+                            RecordType.ADMINISTRATOR,
+                            record.getAdmLastName(),
+                            "Multiple ADMIN matches found for adminDdUuid=" + record.getAdminDdUuid(),
+                            record.getDdUuid(),
+                            null,
+                            record.getFileId()
+                    );
+                    return null;
+                }
             }
-            log.info("Admin not found");
+            log.info("Administrator not found for adminDdUuid={}", record.getAdminDdUuid());
             return null;
-
         } catch (Exception e) {
             log.error("Error searching admin: {}", e.getMessage(), e);
             return null;
         }
     }
+
     /**
      * Update incapacitated person to CAPABLE status (for Object Code 1003 - Lifting Administration)
      */
+
     private void updateIncapablePersonToCapable(IncapableDbRecord record, String onePamUuid) {
         try {
             UpdateInvolvedPartyIndividualRequestV5 individual = UpdateInvolvedPartyIndividualRequestV5.builder()
@@ -2297,7 +2151,785 @@ public class IncapablesProcessingService {
 
 }
 
-THIS IS DB LOGIC
+package com.ing.datadist.dao;
+
+import com.ing.datadist.api.model.AssociatedPartyRelationship;
+import com.ing.datadist.api.model.InvolvedPartyMarking;
+import com.ing.datadist.api.model.SearchIndividualResponseV1;
+import com.ing.datadist.api.model.SearchOrganisationUnitAddressResponseV1;
+import com.ing.datadist.dao.dbfields.Accounting.IncapableAccountingDbFields;
+import com.ing.datadist.dao.queries.IncapablesQueries;
+import com.ing.datadist.domain.incapables.Administrator;
+import com.ing.datadist.domain.incapables.IncapablePerson;
+import com.ing.datadist.domain.incapables.IncapableRelationship;
+import com.ing.datadist.kafka.domain.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+
+@Repository
+@Slf4j
+public class IncapablesAccountingDAO {
+
+    private static final String TBL = "DD_INCAPABLES_ACCT_TBL";
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public IncapablesAccountingDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public Individual getIndividualByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_INDIVIDUAL_BY_UUID, rs -> {
+            if (rs.next()) {
+                Individual individual = new Individual();
+                individual.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                individual.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+                individual.setGender(rs.getString(IncapableAccountingDbFields.INCP_GENDER));
+                individual.setDateOfBirth(rs.getString(IncapableAccountingDbFields.INCP_DATEOFBIRTH));
+                individual.setCityOfBirth(rs.getString(IncapableAccountingDbFields.INCP_CITYOFBIRTH));
+                individual.setCountryOfBirth(rs.getString(IncapableAccountingDbFields.INCP_COUNTRYOFBIRTH));
+                individual.setDateOfDeathDi(rs.getString(IncapableAccountingDbFields.INCP_DATEOFDEATH_DI));
+                individual.setCountryOfResidenceDi(rs.getString(IncapableAccountingDbFields.INCP_COUNTRYOFRESIDENCE_DI));
+                return individual;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public IndividualName getIndividualNameByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_INDIVIDUAL_NAME_BY_UUID, rs -> {
+            if (rs.next()) {
+                IndividualName individualName = new IndividualName();
+                individualName.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                individualName.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+                individualName.setLastName(rs.getString(IncapableAccountingDbFields.INCP_LASTNAME));
+                individualName.setFirstName1(rs.getString(IncapableAccountingDbFields.INCP_FIRSTNAME));
+                return individualName;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public PostalAddress getIncapableAddressByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_INCAPABLE_ADDRESS_BY_UUID, rs -> {
+            if (rs.next()) {
+                PostalAddress address = new PostalAddress();
+                address.setStreetName(rs.getString(IncapableAccountingDbFields.INCP_STREETNAME_DI));
+                address.setHouseNumber(rs.getString(IncapableAccountingDbFields.INCP_HOUSENUMBER_DI));
+                address.setHouseNumberAddition(rs.getString(IncapableAccountingDbFields.INCP_HOUSENUMBERADDITION_DI));
+                address.setPostalCode(rs.getString(IncapableAccountingDbFields.INCP_POSTALCODE_DI));
+                address.setCityName(rs.getString(IncapableAccountingDbFields.INCP_CITYNAME_DI));
+                address.setCountryCode(rs.getString(IncapableAccountingDbFields.INCP_COUNTRYOFRESIDENCE_DI));
+                return address;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public IndividualName getAdministratorNameByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_ADMINISTRATOR_BY_UUID, rs -> {
+            if (rs.next()) {
+                IndividualName administratorName = new IndividualName();
+                administratorName.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                administratorName.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+                administratorName.setLastName(rs.getString(IncapableAccountingDbFields.ADM_LASTNAME_DI));
+                administratorName.setFirstName1(rs.getString(IncapableAccountingDbFields.ADM_FIRSTNAME_DI));
+                return administratorName;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public PostalAddress getAdministratorAddressByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_ADMINISTRATOR_ADDRESS_BY_UUID, rs -> {
+            if (rs.next()) {
+                PostalAddress address = new PostalAddress();
+                address.setStreetName(rs.getString(IncapableAccountingDbFields.ADM_STREETNAME_DI));
+                address.setHouseNumber(rs.getString(IncapableAccountingDbFields.ADM_HOUSENUMBER_DI));
+                address.setHouseNumberAddition(rs.getString(IncapableAccountingDbFields.ADM_HOUSENUMBERADDITION_DI));
+                address.setPostalCode(rs.getString(IncapableAccountingDbFields.ADM_POSTALCODE_DI));
+                address.setCityName(rs.getString(IncapableAccountingDbFields.ADM_CITYNAME_DI));
+                address.setCountryCode(rs.getString(IncapableAccountingDbFields.ADM_COUNTRYOFRESIDENCE_DI));
+                return address;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public Occupation getOccupationByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_OCCUPATION_BY_UUID, rs -> {
+            if (rs.next()) {
+                Occupation occupation = new Occupation();
+                occupation.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                occupation.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+                occupation.setClassificationCode(rs.getString(IncapableAccountingDbFields.ADM_OCCUPATIONCODE_DI));
+                occupation.setRank(rs.getString(IncapableAccountingDbFields.ADM_OCCUPATIONRANK));
+                occupation.setEndDate(rs.getString(IncapableAccountingDbFields.ADM_RESPONSIBILITY_ENDDATE_DI));
+                return occupation;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public com.ing.datadist.kafka.domain.Marking getMarkingByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_MARKING_BY_UUID, rs -> {
+            if (rs.next()) {
+                com.ing.datadist.kafka.domain.Marking marking = new com.ing.datadist.kafka.domain.Marking();
+                marking.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                marking.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+                marking.setObjectCodeDi(rs.getString(IncapableAccountingDbFields.OBJECT_CODE_DI));
+                marking.setIncapabilityEffectiveDateDi(rs.getString(IncapableAccountingDbFields.INAB_EFFECTIVEDATE_DI));
+                marking.setIncapabilityEndDateDi(rs.getString(IncapableAccountingDbFields.INAB_ENDDATE_DI));
+                return marking;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    public IncapableDomainWrapper getCompleteIncapableByUUID(String ddUuid) {
+        return jdbcTemplate.query(IncapablesQueries.SELECT_COMPLETE_INCAPABLE_BY_UUID, rs -> {
+            if (rs.next()) {
+                IncapableDomainWrapper wrapper = new IncapableDomainWrapper();
+                wrapper.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                wrapper.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+
+                Individual individual = new Individual();
+                individual.setDdUuid(rs.getString(IncapableAccountingDbFields.DD_UUID));
+                individual.setEventId(rs.getString(IncapableAccountingDbFields.EVENT_ID));
+                individual.setGender(rs.getString(IncapableAccountingDbFields.INCP_GENDER));
+                individual.setDateOfBirth(rs.getString(IncapableAccountingDbFields.INCP_DATEOFBIRTH));
+                individual.setCityOfBirth(rs.getString(IncapableAccountingDbFields.INCP_CITYOFBIRTH));
+                individual.setCountryOfBirth(rs.getString(IncapableAccountingDbFields.INCP_COUNTRYOFBIRTH));
+                individual.setDateOfDeathDi(rs.getString(IncapableAccountingDbFields.INCP_DATEOFDEATH_DI));
+                individual.setCountryOfResidenceDi(rs.getString(IncapableAccountingDbFields.INCP_COUNTRYOFRESIDENCE_DI));
+                wrapper.setIndividual(individual);
+
+                IndividualName individualName = new IndividualName();
+                individualName.setLastName(rs.getString(IncapableAccountingDbFields.INCP_LASTNAME));
+                individualName.setFirstName1(rs.getString(IncapableAccountingDbFields.INCP_FIRSTNAME));
+                wrapper.setIndividualName(individualName);
+
+
+                return wrapper;
+            }
+            return null;
+        }, ddUuid);
+    }
+
+    /**
+     * Insert a complete incapables record into the accounting table
+     * Saves both incapacitated individual and administrator data
+     */
+    public void insertIncapablesRecord(
+            String ddUuid,
+            String eventId,
+            String incLastName,
+            String incFirstName,
+            String incGender,
+            String incDateOfBirth,
+            String incCityOfBirth,
+            String incCountryOfBirth,
+            String incStreetName,
+            String incHouseNumber,
+            String incHouseNumberAddition,
+            String incPostalCode,
+            String incCityName,
+            String incCountryOfResidence,
+            String incDateOfDeath,
+            String admLastName,
+            String admFirstName,
+            String admStreetName,
+            String admHouseNumber,
+            String admHouseNumberAddition,
+            String admPostalCode,
+            String admCityName,
+            String admCountryOfResidence,
+            String occupationCode,
+            String occupationRank,
+            String objectCode,
+            String inabilityEffectiveDate,
+            String inabilityEndDate,
+            String admResponsibilityEndDate,
+            String fileId) {
+
+        Timestamp timestamp = Timestamp.from(Instant.now());
+
+        String sql = "INSERT INTO " + TBL + " (" +
+                "DD_UUID, EVENT_ID, " +
+                "INCP_LASTNAME, INCP_FIRSTNAME, INCP_GENDER, " +
+                "INCP_DATEOFBIRTH, INCP_CITYOFBIRTH, INCP_COUNTRYOFBIRTH, " +
+                "INCP_STREETNAME_ONEPAM, INCP_HOUSENUMBER_ONEPAM, INCP_HOUSENUMBERADDITION_ONEPAM, " +
+                "INCP_POSTALCODE_ONEPAM, INCP_CITYNAME_ONEPAM, INCP_COUNTRYOFRESIDENCE_ONEPAM, " +
+                "INCP_DATEOFDEATH_ONEPAM, " +
+                "ADM_LASTNAME_ONEPAM, ADM_FIRSTNAME_ONEPAM, " +
+                "ADM_STREETNAME_ONEPAM, ADM_HOUSENUMBER_ONEPAM, ADM_HOUSENUMBERADDITION_ONEPAM, " +
+                "ADM_POSTALCODE_ONEPAM, ADM_CITYNAME_ONEPAM, ADM_COUNTRYOFRESIDENCE_ONEPAM, " +
+                "ADM_OCCUPATIONCODE_ONEPAM, ADM_OCCUPATIONRANK, " +
+                "OBJECT_CODE_ONEPAM, INAB_EFFECTIVEDATE_ONEPAM, INAB_ENDDATE_ONEPAM, " +
+                "ADM_RESPONSIBILITY_ENDDATE_ONEPAM, " +
+                "FILE_ID, CREATED_TS, UPDATED_TS) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        jdbcTemplate.update(sql,
+                ddUuid, eventId,
+                incLastName, incFirstName, incGender,
+                incDateOfBirth, incCityOfBirth, incCountryOfBirth,
+                incStreetName, incHouseNumber, incHouseNumberAddition,
+                incPostalCode, incCityName, incCountryOfResidence,
+                incDateOfDeath,
+                admLastName, admFirstName,
+                admStreetName, admHouseNumber, admHouseNumberAddition,
+                admPostalCode, admCityName, admCountryOfResidence,
+                occupationCode, occupationRank,
+                objectCode, inabilityEffectiveDate, inabilityEndDate,
+                admResponsibilityEndDate,
+                fileId, timestamp, timestamp);
+
+        log.info("Inserted incapables accounting record: DD_UUID={}, FileId={}", ddUuid, fileId);
+    }
+
+    /**
+     * Update an existing incapables record in the accounting table
+     * Updates both incapacitated individual and administrator data from Data Ingestion
+     */
+    public void updateIncapablesRecord(
+            String ddUuid,
+            String incLastName,
+            String incFirstName,
+            String incGender,
+            String incDateOfBirth,
+            String incCityOfBirth,
+            String incCountryOfBirth,
+            String incStreetName,
+            String incHouseNumber,
+            String incHouseNumberAddition,
+            String incPostalCode,
+            String incCityName,
+            String incCountryOfResidence,
+            String incDateOfDeath,
+            String admLastName,
+            String admFirstName,
+            String admStreetName,
+            String admHouseNumber,
+            String admHouseNumberAddition,
+            String admPostalCode,
+            String admCityName,
+            String admCountryOfResidence,
+            String occupationCode,
+            String occupationRank,
+            String objectCode,
+            String inabilityEffectiveDate,
+            String inabilityEndDate,
+            String admResponsibilityEndDate,
+            String fileId) {
+
+        Timestamp timestamp = Timestamp.from(Instant.now());
+
+        String sql = "UPDATE " + TBL + " SET " +
+                "INCP_LASTNAME_DI = ?, INCP_FIRSTNAME_DI = ?, INCP_GENDER = ?, " +
+                "INCP_DATEOFBIRTH = ?, INCP_CITYOFBIRTH = ?, INCP_COUNTRYOFBIRTH = ?, " +
+                "INCP_STREETNAME_DI = ?, INCP_HOUSENUMBER_DI = ?, INCP_HOUSENUMBERADDITION_DI = ?, " +
+                "INCP_POSTALCODE_DI = ?, INCP_CITYNAME_DI = ?, INCP_COUNTRYOFRESIDENCE_DI = ?, " +
+                "INCP_DATEOFDEATH_DI = ?, " +
+                "ADM_LASTNAME_DI = ?, ADM_FIRSTNAME_DI = ?, " +
+                "ADM_STREETNAME_DI = ?, ADM_HOUSENUMBER_DI = ?, ADM_HOUSENUMBERADDITION_DI = ?, " +
+                "ADM_POSTALCODE_DI = ?, ADM_CITYNAME_DI = ?, ADM_COUNTRYOFRESIDENCE_DI = ?, " +
+                "ADM_OCCUPATIONCODE_DI = ?, ADM_OCCUPATIONRANK = ?, " +
+                "OBJECT_CODE_DI = ?, INAB_EFFECTIVEDATE_DI = ?, INAB_ENDDATE_DI = ?, " +
+                "ADM_RESPONSIBILITY_ENDDATE_DI = ?, " +
+                "FILE_ID = ?, UPDATED_TS = ? " +
+                "WHERE DD_UUID = ?";
+
+        jdbcTemplate.update(sql,
+                incLastName, incFirstName, incGender,
+                incDateOfBirth, incCityOfBirth, incCountryOfBirth,
+                incStreetName, incHouseNumber, incHouseNumberAddition,
+                incPostalCode, incCityName, incCountryOfResidence,
+                incDateOfDeath,
+                admLastName, admFirstName,
+                admStreetName, admHouseNumber, admHouseNumberAddition,
+                admPostalCode, admCityName, admCountryOfResidence,
+                occupationCode, occupationRank,
+                objectCode, inabilityEffectiveDate, inabilityEndDate,
+                admResponsibilityEndDate,
+                fileId, timestamp,
+                ddUuid);
+
+        log.info("Updated incapables accounting record: DD_UUID={}, FileId={}", ddUuid, fileId);
+    }
+
+    /**
+     * Insert a new record if it doesn't exist, otherwise update it
+     */
+    public void insertOrUpdateIncapablesRecord(
+            String ddUuid,
+            String eventId,
+            String incLastName,
+            String incFirstName,
+            String incGender,
+            String incDateOfBirth,
+            String incCityOfBirth,
+            String incCountryOfBirth,
+            String incStreetName,
+            String incHouseNumber,
+            String incHouseNumberAddition,
+            String incPostalCode,
+            String incCityName,
+            String incCountryOfResidence,
+            String incDateOfDeath,
+            String admLastName,
+            String admFirstName,
+            String admStreetName,
+            String admHouseNumber,
+            String admHouseNumberAddition,
+            String admPostalCode,
+            String admCityName,
+            String admCountryOfResidence,
+            String occupationCode,
+            String occupationRank,
+            String objectCode,
+            String inabilityEffectiveDate,
+            String inabilityEndDate,
+            String admResponsibilityEndDate,
+            String fileId) {
+
+        // Check if record exists
+        String checkSql = "SELECT COUNT(*) FROM " + TBL + " WHERE DD_UUID = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, ddUuid);
+
+        if (count != null && count > 0) {
+            // Update existing record
+            updateIncapablesRecord(
+                    ddUuid,
+                    incLastName, incFirstName, incGender,
+                    incDateOfBirth, incCityOfBirth, incCountryOfBirth,
+                    incStreetName, incHouseNumber, incHouseNumberAddition,
+                    incPostalCode, incCityName, incCountryOfResidence,
+                    incDateOfDeath,
+                    admLastName, admFirstName,
+                    admStreetName, admHouseNumber, admHouseNumberAddition,
+                    admPostalCode, admCityName, admCountryOfResidence,
+                    occupationCode, occupationRank,
+                    objectCode, inabilityEffectiveDate, inabilityEndDate,
+                    admResponsibilityEndDate,
+                    fileId);
+        } else {
+            // Insert new record
+            insertIncapablesRecord(
+                    ddUuid, eventId,
+                    incLastName, incFirstName, incGender,
+                    incDateOfBirth, incCityOfBirth, incCountryOfBirth,
+                    incStreetName, incHouseNumber, incHouseNumberAddition,
+                    incPostalCode, incCityName, incCountryOfResidence,
+                    incDateOfDeath,
+                    admLastName, admFirstName,
+                    admStreetName, admHouseNumber, admHouseNumberAddition,
+                    admPostalCode, admCityName, admCountryOfResidence,
+                    occupationCode, occupationRank,
+                    objectCode, inabilityEffectiveDate, inabilityEndDate,
+                    admResponsibilityEndDate,
+                    fileId);
+        }
+    }
+
+    public void insertWithWrapper(IncapableRelationship wrapper){
+
+        String ddUuid = wrapper.getDdUuid();
+        IncapablePerson incapablePerson = wrapper.getIncapablePerson();
+        com.ing.datadist.domain.incapables.PostalAddress ipPostalAddress =incapablePerson.getPostalAddress();
+
+        String ipGender = incapablePerson.getGender();
+        String ipLastName = incapablePerson.getLastName();
+        String ipFirstName = incapablePerson.getFirstName();
+        String ipStreetName =ipPostalAddress.getStreetName();
+        String ipHouseNumber = ipPostalAddress.getHouseNumber();
+        String ipHouseNumberAdd =  ipPostalAddress.getHouseNumberAddition();
+        String ipPostalCode = ipPostalAddress.getPostalCode();
+        String ipCity = ipPostalAddress.getCityName();
+        String ipCountryOfResidence = ipPostalAddress.getCountryOfResidence();
+        String ipDateOfBirth = incapablePerson.getDateOfBirth();
+        String ipDateOfDeath = incapablePerson.getDateOfDeath();
+        String ipCityOfBirth = incapablePerson.getCityOfBirth();
+        String ipCountryOfBirth = incapablePerson.getCountryOfBirth();
+
+        String objectCode = wrapper.getObjectCode();
+        String inabEndDate = wrapper.getInabilityEndDate();
+        String inabEffectiveDate = wrapper.getInabilityEffectiveDate();
+
+        Administrator administrator =wrapper.getAdministrator();
+        com.ing.datadist.domain.incapables.PostalAddress admPostalAddress = administrator.getPostalAddress();
+
+        String admOccupationCode = administrator.getOccupationCode();
+        String admLastName = administrator.getLastName();
+        String admFirstName = administrator.getFirstName();
+        String admStreetName =admPostalAddress.getStreetName();
+        String admHouseNumber = admPostalAddress.getHouseNumber();
+        String admHouseNumberAdd =  admPostalAddress.getHouseNumberAddition();
+        String admPostalCode = admPostalAddress.getPostalCode();
+        String admCity = admPostalAddress.getCityName();
+        String admCountryOfResidence = admPostalAddress.getCountryOfResidence();
+        String admResponsibilityEndDate = administrator.getResponsibilityEndDate();
+        Timestamp createTime = Timestamp.from(Instant.now());
+
+
+        String sql = "INSERT INTO " + TBL + " (" +
+                "DD_UUID,INCP_GENDER,INCP_LASTNAME,INCP_FIRSTNAME,INCP_STREETNAME_DI,INCP_HOUSENUMBER_DI,INCP_HOUSENUMBERADDITION_DI," +
+                "INCP_POSTALCODE_DI,INCP_CITYNAME_DI,INCP_COUNTRYOFRESIDENCE_DI,INCP_DATEOFBIRTH,INCP_DATEOFDEATH_DI,INCP_CITYOFBIRTH," +
+                "INCP_COUNTRYOFBIRTH,OBJECT_CODE_DI,INAB_ENDDATE_DI,INAB_EFFECTIVEDATE_DI,ADM_OCCUPATIONCODE_DI," +
+                "ADM_LASTNAME_DI,ADM_FIRSTNAME_DI,ADM_STREETNAME_DI,ADM_HOUSENUMBER_DI,ADM_HOUSENUMBERADDITION_DI,ADM_POSTALCODE_DI," +
+                "ADM_CITYNAME_DI,ADM_COUNTRYOFRESIDENCE_DI,ADM_RESPONSIBILITY_ENDDATE_DI," +
+                "CREATED_TS" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ? ,?, ?, ?" +
+                ", ?, ?, ?, ?, ?, ?, ? ,?, ?, ?" +
+                ",?, ?, ?, ?, ?, ?, ? ,?, ?)";
+
+        jdbcTemplate.update(sql,
+                ddUuid, ipGender,ipLastName,ipFirstName,ipStreetName,ipHouseNumber,ipHouseNumberAdd,
+                ipPostalCode,ipCity,ipCountryOfResidence,ipDateOfBirth,ipDateOfDeath,ipCityOfBirth,
+                ipCountryOfBirth,objectCode,inabEndDate,inabEffectiveDate,admOccupationCode,
+                admLastName,admFirstName,admStreetName,admHouseNumber,admHouseNumberAdd,admPostalCode,
+                admCity,admCountryOfResidence,admResponsibilityEndDate,
+                createTime
+        );
+        log.info("Inserted Incapable Record For Create, ddUuid:{}", ddUuid);
+    }
+
+
+    public void insertDIRecord(IncapablesDAO.IncapableDbRecord record) {
+
+        String sql = "INSERT INTO DD_INCAPABLES_ACCT_TBL (" +
+                "DD_UUID, EVENT_ID, " +
+                "INCP_LASTNAME, INCP_FIRSTNAME, INCP_GENDER, " +
+                "INCP_DATEOFBIRTH, INCP_CITYOFBIRTH, INCP_COUNTRYOFBIRTH, " +
+                "INCP_STREETNAME_DI, INCP_HOUSENUMBER_DI, INCP_HOUSENUMBERADDITION_DI, " +
+                "INCP_POSTALCODE_DI, INCP_CITYNAME_DI, INCP_COUNTRYOFRESIDENCE_DI, " +
+                "INCP_DATEOFDEATH_DI, " +
+                "ADM_LASTNAME_DI, ADM_FIRSTNAME_DI, " +
+                "ADM_STREETNAME_DI, ADM_HOUSENUMBER_DI, ADM_HOUSENUMBERADDITION_DI, " +
+                "ADM_POSTALCODE_DI, ADM_CITYNAME_DI, ADM_COUNTRYOFRESIDENCE_DI, " +
+                "ADM_OCCUPATIONCODE_DI, ADM_OCCUPATIONRANK, " +
+                "OBJECT_CODE_DI, INAB_EFFECTIVEDATE_DI, INAB_ENDDATE_DI, " +
+                "ADM_RESPONSIBILITY_ENDDATE_DI, " +
+                "FILE_ID, CREATED_TS, UPDATED_TS) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        jdbcTemplate.update(sql,
+                record.getDdUuid(), "null",
+                record.getIncLastName(), record.getIncFirstName(), record.getIncGender(),
+                record.getIncDateOfBirth(), record.getIncCityOfBirth(), record.getIncCountryOfBirth(),
+                record.getIncStreetName(), record.getIncHouseNumber(), record.getIncHouseNumberAddition(),
+                record.getIncPostalCode(), record.getIncCityName(), record.getIncCountryOfResidence(),
+                record.getIncDateOfDeath(),
+                record.getAdmLastName(), record.getAdmFirstName(),
+                record.getAdmStreetName(), record.getAdmHouseNumber(), record.getAdmHouseNumberAddition(),
+                record.getAdmPostalCode(), record.getAdmCityName(), record.getAdmCountryOfResidence(),
+                record.getAdmOccupationCode(),
+                "1",
+/*
+                record.getAdmOccupationRank(),
+*/
+                record.getObjectCode(), record.getInabilityEffectiveDate(), record.getInabilityEndDate(),
+                record.getAdmResponsibilityEndDate(),
+                record.getFileId(),
+                Timestamp.from(Instant.now()), Timestamp.from(Instant.now())
+        );
+    }
+    public void updateIncapableOnePamSnapshot(String ddUuid, SearchIndividualResponseV1 inc) {
+
+        String sql = "UPDATE " + TBL + " SET " +
+                "INCP_LASTNAME = ?, INCP_FIRSTNAME = ?, " +
+                "INCP_STREETNAME_ONEPAM = ?, INCP_HOUSENUMBER_ONEPAM = ?, INCP_HOUSENUMBERADDITION_ONEPAM = ?, " +
+                "INCP_POSTALCODE_ONEPAM = ?, INCP_CITYNAME_ONEPAM = ?, INCP_COUNTRYOFRESIDENCE_ONEPAM = ?, " +
+                "INCP_DATEOFBIRTH = ?, INCP_CITYOFBIRTH = ?, INCP_COUNTRYOFBIRTH = ?, " +
+                "INCP_DATEOFDEATH_ONEPAM = ?, UPDATED_TS = SYSTIMESTAMP " +
+                "WHERE DD_UUID = ?";
+
+        var name = inc.getIndividualNames().get(0);
+
+        var pa = inc.getPostalAddresses().get(0);
+
+        jdbcTemplate.update(sql,
+                name.getLastName(),
+                name.getFirstName1(),
+
+                pa.getStreetName(),
+                pa.getHouseNumber(),
+                pa.getHouseNumberAddition(),
+                pa.getPostalCode(),
+                pa.getCityName(),
+                pa.getCountryCode(),
+
+                inc.getDateOfBirth(),
+                inc.getCityOfBirth(),
+                inc.getCountryOfBirth(),
+                inc.getDateOfDeath(),
+
+                ddUuid
+        );
+    }
+
+    public void updateIncapableDI(IncapablesDAO.IncapableDbRecord record) {
+        String sql = "UPDATE DD_INCAPABLES_ACCT_TBL SET " +
+                "INCP_LASTNAME=?, INCP_FIRSTNAME=?, INCP_GENDER=?, " +
+                "INCP_DATEOFBIRTH=?, INCP_CITYOFBIRTH=?, INCP_COUNTRYOFBIRTH=?, " +
+                "INCP_STREETNAME_DI=?, INCP_HOUSENUMBER_DI=?, INCP_HOUSENUMBERADDITION_DI=?, " +
+                "INCP_POSTALCODE_DI=?, INCP_CITYNAME_DI=?, INCP_COUNTRYOFRESIDENCE_DI=?, " +
+                "INCP_DATEOFDEATH_DI=?, UPDATED_TS=SYSTIMESTAMP WHERE DD_UUID=?";
+
+        jdbcTemplate.update(sql,
+                record.getIncLastName(), record.getIncFirstName(), record.getIncGender(),
+                record.getIncDateOfBirth(), record.getIncCityOfBirth(), record.getIncCountryOfBirth(),
+                record.getIncStreetName(), record.getIncHouseNumber(), record.getIncHouseNumberAddition(),
+                record.getIncPostalCode(), record.getIncCityName(), record.getIncCountryOfResidence(),
+                record.getIncDateOfDeath(),
+                record.getDdUuid()
+        );
+    }
+    public void updateAdministratorOnePamSnapshot(String ddUuid, SearchIndividualResponseV1 adm) {
+
+        String sql = "UPDATE " + TBL + " SET " +
+                "ADM_LASTNAME_ONEPAM = ?, ADM_FIRSTNAME_ONEPAM = ?, " +
+                "ADM_STREETNAME_ONEPAM = ?, ADM_HOUSENUMBER_ONEPAM = ?, ADM_HOUSENUMBERADDITION_ONEPAM = ?, " +
+                "ADM_POSTALCODE_ONEPAM = ?, ADM_CITYNAME_ONEPAM = ?, ADM_COUNTRYOFRESIDENCE_ONEPAM = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP " +
+                "WHERE DD_UUID = ?";
+
+        var name = adm.getIndividualNames().get(0);
+        var pa   = adm.getPostalAddresses().get(0);
+
+        jdbcTemplate.update(sql,
+                name.getLastName(),
+                name.getFirstName1(),
+                pa.getStreetName(),
+                pa.getHouseNumber(),
+                pa.getHouseNumberAddition(),
+                pa.getPostalCode(),
+                pa.getCityName(),
+                pa.getCountryCode(),
+                ddUuid
+        );
+    }
+    public void updateMarkingOnePamSnapshot(String ddUuid,
+                                            String effectiveDate,
+                                            String endDate,
+                                            String objectCode) {
+
+        String sql = "UPDATE " + TBL + " SET " +
+                "OBJECT_CODE_ONEPAM = ?, " +
+                "INAB_EFFECTIVEDATE_ONEPAM = ?, " +
+                "INAB_ENDDATE_ONEPAM = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP " +
+                "WHERE DD_UUID = ?";
+
+        jdbcTemplate.update(sql,
+                objectCode,
+                effectiveDate,
+                endDate,
+                ddUuid
+        );
+    }
+    public void insertInitialRow(String ddUuid, String fileId) {
+        String sql = "INSERT INTO DD_INCAPABLES_ACCT_TBL (DD_UUID, EVENT_ID, FILE_ID, CREATED_BY, CREATED_TS) " +
+                "VALUES (?, 'null', ?, 'DD_USER', SYSTIMESTAMP)";
+
+        jdbcTemplate.update(sql, ddUuid, fileId);
+    }
+    public void updateIncapableOnePamSnapshot(
+            String ddUuid,
+            SearchIndividualResponseV1 resp,
+            String fileId) {
+
+        String sql = "UPDATE DD_INCAPABLES_ACCT_TBL SET " +
+                "INCP_FIRSTNAME = ?, " +
+                "INCP_LASTNAME = ?, " +
+                "INCP_STREETNAME_ONEPAM = ?, " +
+                "INCP_HOUSENUMBER_ONEPAM = ?, " +
+                "INCP_HOUSENUMBERADDITION_ONEPAM = ?, " +
+                "INCP_POSTALCODE_ONEPAM = ?, " +
+                "INCP_CITYNAME_ONEPAM = ?, " +
+                "INCP_COUNTRYOFRESIDENCE_ONEPAM = ?, " +
+                "INCP_DATEOFDEATH_ONEPAM = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP, FILE_ID = ? " +
+                "WHERE DD_UUID = ?";
+
+        SearchOrganisationUnitAddressResponseV1 addr =
+                resp.getPostalAddresses() != null && !resp.getPostalAddresses().isEmpty()
+                        ? resp.getPostalAddresses().get(0)
+                        : null;
+
+        jdbcTemplate.update(sql,
+                resp.getIndividualNames().get(0).getFirstName1(),
+                resp.getIndividualNames().get(0).getLastName(),
+                addr != null ? addr.getStreetName() : null,
+                addr != null ? addr.getHouseNumber() : null,
+                addr != null ? addr.getHouseNumberAddition() : null,
+                addr != null ? addr.getPostalCode() : null,
+                addr != null ? addr.getCityName() : null,
+                addr != null ? addr.getCountryCode() : null,
+                resp.getDateOfDeath(),
+                fileId,
+                ddUuid
+        );
+    }
+    public void updateAdministratorOnePamSnapshot(
+            String ddUuid,
+            SearchIndividualResponseV1 resp,
+            String fileId) {
+
+        String sql = "UPDATE DD_INCAPABLES_ACCT_TBL SET " +
+                "ADM_FIRSTNAME_ONEPAM = ?, " +
+                "ADM_LASTNAME_ONEPAM = ?, " +
+                "ADM_STREETNAME_ONEPAM = ?, " +
+                "ADM_HOUSENUMBER_ONEPAM = ?, " +
+                "ADM_HOUSENUMBERADDITION_ONEPAM = ?, " +
+                "ADM_POSTALCODE_ONEPAM = ?, " +
+                "ADM_CITYNAME_ONEPAM = ?, " +
+                "ADM_COUNTRYOFRESIDENCE_ONEPAM = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP, FILE_ID = ? " +
+                "WHERE DD_UUID = ?";
+
+        SearchOrganisationUnitAddressResponseV1 addr =
+                resp.getPostalAddresses() != null && !resp.getPostalAddresses().isEmpty()
+                        ? resp.getPostalAddresses().get(0)
+                        : null;
+
+        jdbcTemplate.update(sql,
+                resp.getIndividualNames().get(0).getFirstName1(),
+                resp.getIndividualNames().get(0).getLastName(),
+                addr != null ? addr.getStreetName() : null,
+                addr != null ? addr.getHouseNumber() : null,
+                addr != null ? addr.getHouseNumberAddition() : null,
+                addr != null ? addr.getPostalCode() : null,
+                addr != null ? addr.getCityName() : null,
+                addr != null ? addr.getCountryCode() : null,
+                fileId,
+                ddUuid
+        );
+    }
+    public void updateRelationshipOnePamSnapshot(
+            String ddUuid,
+            AssociatedPartyRelationship rel,
+            String fileId) {
+
+        String sql = "UPDATE DD_INCAPABLES_ACCT_TBL SET " +
+                "INAB_EFFECTIVEDATE_ONEPAM = ?, " +
+                "INAB_ENDDATE_ONEPAM = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP, FILE_ID = ? " +
+                "WHERE DD_UUID = ?";
+
+        jdbcTemplate.update(sql,
+                rel.getEffectiveDate(),
+                rel.getEndDate(),
+                fileId,
+                ddUuid
+        );
+    }
+    public void updateMarkingOnePamSnapshot(
+            String ddUuid,
+            InvolvedPartyMarking marking,
+            String fileId) {
+
+        String sql = "UPDATE DD_INCAPABLES_ACCT_TBL SET " +
+                "OBJECT_CODE_ONEPAM = ?, " +
+                "INAB_EFFECTIVEDATE_ONEPAM = ?, " +
+                "INAB_ENDDATE_ONEPAM = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP, FILE_ID = ? " +
+                "WHERE DD_UUID = ?";
+
+        jdbcTemplate.update(sql,
+                marking.getInvolvedPartyMarkingType(),
+                marking.getEffectiveDate(),
+                marking.getEndDate(),
+                fileId,
+                ddUuid
+        );
+    }
+    public void updateDiFields(String ddUuid, IncapablesDAO.IncapableDbRecord record) {
+        String sql = "UPDATE DD_INCAPABLES_ACCT_TBL SET " +
+                "INCP_FIRSTNAME = ?, " +
+                "INCP_LASTNAME = ?, " +
+                "INCP_STREETNAME_DI = ?, " +
+                "INCP_HOUSENUMBER_DI = ?, " +
+                "INCP_HOUSENUMBERADDITION_DI = ?, " +
+                "INCP_POSTALCODE_DI = ?, " +
+                "INCP_CITYNAME_DI = ?, " +
+                "INCP_COUNTRYOFRESIDENCE_DI = ?, " +
+                "OBJECT_CODE_DI = ?, " +
+                "ADM_FIRSTNAME_DI = ?, " +
+                "ADM_LASTNAME_DI = ?, " +
+                "ADM_STREETNAME_DI = ?, " +
+                "ADM_HOUSENUMBER_DI = ?, " +
+                "ADM_HOUSENUMBERADDITION_DI = ?, " +
+                "ADM_POSTALCODE_DI = ?, " +
+                "ADM_CITYNAME_DI = ?, " +
+                "ADM_COUNTRYOFRESIDENCE_DI = ?, " +
+                "INAB_EFFECTIVEDATE_DI = ?, " +
+                "INAB_ENDDATE_DI = ?, " +
+                "ADM_RESPONSIBILITY_ENDDATE_DI = ?, " +
+                "UPDATED_TS = SYSTIMESTAMP " +
+                "WHERE DD_UUID = ?";
+
+        jdbcTemplate.update(sql,
+                record.getIncFirstName(),
+                record.getIncLastName(),
+                record.getIncStreetName(),
+                record.getIncHouseNumber(),
+                record.getIncHouseNumberAddition(),
+                record.getIncPostalCode(),
+                record.getIncCityName(),
+                record.getIncCountryOfResidence(),
+                record.getObjectCode(),
+                record.getAdmFirstName(),
+                record.getAdmLastName(),
+                record.getAdmStreetName(),
+                record.getAdmHouseNumber(),
+                record.getAdmHouseNumberAddition(),
+                record.getAdmPostalCode(),
+                record.getAdmCityName(),
+                record.getAdmCountryOfResidence(),
+                record.getInabilityEffectiveDate(),
+                record.getInabilityEndDate(),
+                record.getAdmResponsibilityEndDate(),
+                ddUuid
+        );
+    }
+    public void insertSkeletonRecord(IncapablesDAO.IncapableDbRecord r) {
+        String sql = """
+        INSERT INTO DD_INCAPABLES_ACCT_TBL (
+            DD_UUID,
+            EVENT_ID,
+            FILE_ID,
+            INCP_LASTNAME,
+            INCP_FIRSTNAME,
+            ADM_LASTNAME_DI,
+            ADM_FIRSTNAME_DI,
+            CREATED_TS,
+            UPDATED_TS
+        ) VALUES (?,?,?,?,?,?,?,SYSTIMESTAMP,SYSTIMESTAMP)
+    """;
+
+        jdbcTemplate.update(sql,
+                r.getDdUuid(),
+                "null",
+                r.getFileId(),
+                "null",
+                "null",
+                "null",
+                "null"
+        );
+    }
+
+}
+
+
+
+
+
+NOW GIVE DB FIXES THIS IS FINAL DB LOGIC
 ✅ ✅ YOUR FINAL RULE CONFIRMED
 When CREATE succeeds (1001 / 1004), you want:
 ✅ Log the OnePAM CREATE RESPONSE into _DI fields ONLY
@@ -2349,3 +2981,6 @@ SEARCH/IDNETIFY = NOT NULL
 
 ✅ Write relationship & marking snapshots
  
+
+
+
